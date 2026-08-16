@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PhotoMap — Local Photo &amp; Video Map</title>
-  <meta name="description" content="Explore your local photos and videos on an interactive geographic map. 100% private, offline, lightweight JSON indexed." />
+  <meta name="description"
+    content="Explore your local photos and videos on an interactive geographic map. 100% private, offline, lightweight JSON indexed." />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -78,13 +82,16 @@
       width: 6px;
       height: 6px;
     }
+
     ::-webkit-scrollbar-track {
       background: var(--bg-surface);
     }
+
     ::-webkit-scrollbar-thumb {
       background: #334155;
       border-radius: 999px;
     }
+
     ::-webkit-scrollbar-thumb:hover {
       background: #475569;
     }
@@ -215,7 +222,8 @@
       transition: border-color 0.2s;
     }
 
-    .select-dropdown:hover, .select-dropdown:focus {
+    .select-dropdown:hover,
+    .select-dropdown:focus {
       border-color: var(--border-focus);
     }
 
@@ -269,12 +277,6 @@
       white-space: nowrap;
     }
 
-    .stat-badge-success {
-      background: rgba(16, 185, 129, 0.12);
-      border-color: rgba(16, 185, 129, 0.25);
-      color: #34d399;
-    }
-
     /* Menu Dropdown */
     .dropdown-container {
       position: relative;
@@ -303,8 +305,15 @@
     }
 
     @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-6px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .dropdown-item {
@@ -367,8 +376,15 @@
     }
 
     @keyframes toastSlideUp {
-      from { opacity: 0; transform: translateY(20px) scale(0.9); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     /* Main Container Views */
@@ -422,6 +438,7 @@
       color: var(--text-primary) !important;
       border: 1px solid var(--border-subtle) !important;
     }
+
     .leaflet-control-zoom a:hover {
       background-color: var(--bg-card-hover) !important;
       color: #fff !important;
@@ -441,18 +458,22 @@
       border: 2.5px solid rgba(255, 255, 255, 0.9);
       user-select: none;
     }
+
     .custom-cluster-marker:hover {
-      transform: scale(1.15);
+      transform: scale(1.12);
       z-index: 1000 !important;
     }
+
     .cluster-small {
       background: linear-gradient(135deg, #06b6d4, #3b82f6);
       font-size: 13px;
     }
+
     .cluster-medium {
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       font-size: 14px;
     }
+
     .cluster-large {
       background: linear-gradient(135deg, #ec4899, #f43f5e);
       font-size: 15px;
@@ -470,8 +491,9 @@
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+
     .single-photo-marker:hover {
-      transform: scale(1.25);
+      transform: scale(1.2);
       border-color: #6366f1;
       box-shadow: 0 8px 24px rgba(99, 102, 241, 0.6);
       z-index: 1000 !important;
@@ -483,17 +505,17 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(15, 23, 42, 0.95);
+      background: rgba(15, 23, 42, 0.96);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--border-subtle);
       z-index: 500;
       transform: translateY(100%);
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: column;
-      max-height: 48vh;
+      max-height: 46vh;
     }
 
     #bottom-tray.open {
@@ -527,6 +549,7 @@
       padding: 4px 8px;
       border-radius: 6px;
     }
+
     .tray-close-btn:hover {
       background: var(--bg-card);
       color: #fff;
@@ -535,10 +558,11 @@
     .tray-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 10px;
+      gap: 12px;
       padding: 16px 20px;
       overflow-y: auto;
       flex: 1;
+      min-height: 150px;
     }
 
     /* Media Grid View (All Photos View) */
@@ -572,6 +596,8 @@
     .media-card {
       position: relative;
       aspect-ratio: 1/1;
+      width: 100%;
+      min-height: 120px;
       background: var(--bg-surface);
       border-radius: var(--radius-md);
       overflow: hidden;
@@ -586,29 +612,36 @@
       border-color: var(--border-focus);
     }
 
-    .media-card img, .media-card video {
+    .media-card img,
+    .media-card video {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
       background: #0f172a;
+      z-index: 2;
     }
 
     .media-card .card-skeleton {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(110deg, #1e293b 8%, #334155 18%, #1e293b 33%);
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, #1c2433 8%, #283548 18%, #1c2433 33%);
       background-size: 200% 100%;
       animation: shimmer 1.5s linear infinite;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #64748b;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
+      z-index: 1;
     }
 
     @keyframes shimmer {
-      to { background-position-x: -200%; }
+      to {
+        background-position-x: -200%;
+      }
     }
 
     .media-card .card-badge-top {
@@ -625,7 +658,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      z-index: 2;
+      z-index: 3;
     }
 
     .media-card .card-info-bottom {
@@ -633,21 +666,22 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
-      padding: 20px 10px 8px;
-      font-size: 0.75rem;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+      padding: 24px 10px 8px;
+      font-size: 0.73rem;
       color: #e2e8f0;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      z-index: 2;
+      z-index: 3;
+      pointer-events: none;
     }
 
     .media-card .card-info-title {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 75%;
+      max-width: 72%;
     }
 
     .grid-sentinel {
@@ -688,8 +722,15 @@
     }
 
     @keyframes fadeInScale {
-      from { opacity: 0; transform: scale(0.95) translateY(10px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
     .hero-icon-wrapper {
@@ -767,6 +808,7 @@
       font-size: 0.8rem;
       color: var(--text-secondary);
     }
+
     .feature-item span {
       color: var(--accent-secondary);
     }
@@ -825,7 +867,9 @@
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .progress-bar-container {
@@ -964,12 +1008,19 @@
       transition: all 0.2s;
       z-index: 10;
     }
+
     .lightbox-nav-btn:hover {
       background: rgba(99, 102, 241, 0.8);
       transform: translateY(-50%) scale(1.1);
     }
-    .lightbox-prev { left: 24px; }
-    .lightbox-next { right: 24px; }
+
+    .lightbox-prev {
+      left: 24px;
+    }
+
+    .lightbox-next {
+      right: 24px;
+    }
 
     .lightbox-footer {
       height: 70px;
@@ -1021,9 +1072,10 @@
       box-shadow: var(--shadow-sm);
       transition: all 0.2s;
     }
+
     .map-action-pill:hover {
       background: var(--bg-card-hover);
-      border-color: rgba(255,255,255,0.2);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     /* Hidden file input for manual JSON import */
@@ -1033,20 +1085,36 @@
 
     /* Responsive */
     @media (max-width: 900px) {
-      header { padding: 0 12px; }
-      .brand-text p { display: none; }
-      .feature-bullets { grid-template-columns: 1fr; }
-      .lightbox-footer { flex-direction: column; height: auto; padding: 12px; gap: 6px; }
+      header {
+        padding: 0 12px;
+      }
+
+      .brand-text p {
+        display: none;
+      }
+
+      .feature-bullets {
+        grid-template-columns: 1fr;
+      }
+
+      .lightbox-footer {
+        flex-direction: column;
+        height: auto;
+        padding: 12px;
+        gap: 6px;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- Top Navigation Bar -->
   <header>
     <div class="brand" id="btn-brand" title="PhotoMap Home">
       <div class="brand-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
           <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
           <line x1="9" y1="3" x2="9" y2="21"></line>
           <line x1="15" y1="6" x2="15" y2="21"></line>
@@ -1145,7 +1213,10 @@
         <button class="tray-close-btn" id="btn-close-tray" title="Close drawer">✕</button>
       </div>
       <div class="tray-grid" id="tray-grid">
-        <!-- Thumbnails populated dynamically -->
+        <!-- Thumbnails populated dynamically with virtualized chunking -->
+      </div>
+      <div class="grid-sentinel" id="tray-sentinel" style="display: none;">
+        <span>Loading more items...</span>
       </div>
     </div>
 
@@ -1163,7 +1234,8 @@
     <div id="welcome-screen">
       <div class="hero-card">
         <div class="hero-icon-wrapper">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             <circle cx="8.5" cy="8.5" r="1.5"></circle>
             <polyline points="21 15 16 10 5 21"></polyline>
@@ -1171,7 +1243,8 @@
         </div>
         <h2>Explore Your Photos</h2>
         <p class="subtitle">
-          View your local photo &amp; video library on an interactive map. Automatically cached in <code>photomap_index.json</code> for instant reloads and ultra-low RAM usage.
+          View your local photo &amp; video library on an interactive map. Automatically cached in
+          <code>photomap_index.json</code> for instant reloads and ultra-low RAM usage.
         </p>
 
         <div class="privacy-badge">
@@ -1193,7 +1266,9 @@
         </div>
 
         <div class="browser-warning" id="browser-warning">
-          ⚠️ <strong>Browser Notice:</strong> Your browser does not support the modern folder picker. Please open <code>map.html</code> in <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> for the best experience.
+          ⚠️ <strong>Browser Notice:</strong> Your browser does not support the modern folder picker. Please open
+          <code>index.html</code> in <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> for the best
+          experience.
         </div>
       </div>
     </div>
@@ -1202,8 +1277,10 @@
     <div id="scanning-overlay">
       <div class="scanning-card">
         <div class="scan-spinner"></div>
-        <h3 id="scan-title" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">Scanning your photos...</h3>
-        <p style="font-size: 0.85rem; color: var(--text-secondary);" id="scan-status-msg">Searching through subdirectories and reading metadata</p>
+        <h3 id="scan-title" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">Scanning your photos...
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);" id="scan-status-msg">Searching through
+          subdirectories and reading metadata</p>
 
         <div class="progress-bar-container">
           <div class="progress-bar-fill" id="scan-progress-bar"></div>
@@ -1251,8 +1328,9 @@
 
     <div class="lightbox-main">
       <button class="lightbox-nav-btn lightbox-prev" id="lb-prev" title="Previous photo (Left Arrow)">❮</button>
-      
-      <div id="lb-media-container" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+
+      <div id="lb-media-container"
+        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
         <!-- Image or Video dynamically rendered -->
       </div>
 
@@ -1290,8 +1368,41 @@
       const PHOTO_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'avif', 'gif', 'bmp', 'tiff']);
       const VIDEO_EXTENSIONS = new Set(['mp4', 'mov', 'mkv', 'avi', 'webm', 'm4v', '3gp']);
       const CACHE_INDEX_FILENAME = 'photomap_index.json';
-      const BATCH_RENDER_SIZE = 60;
-      const MAX_OBJECT_URL_CACHE = 80;
+      const BATCH_RENDER_SIZE = 50;
+      const MAX_OBJECT_URL_CACHE = 5000;
+
+      // Asynchronous Concurrency Queue to prevent main thread blocking during I/O
+      class AsyncQueue {
+        constructor(concurrency = 8) {
+          this.concurrency = concurrency;
+          this.running = 0;
+          this.queue = [];
+        }
+        add(fn) {
+          return new Promise((resolve, reject) => {
+            this.queue.push({ fn, resolve, reject });
+            this.next();
+          });
+        }
+        next() {
+          while (this.running < this.concurrency && this.queue.length > 0) {
+            const { fn, resolve, reject } = this.queue.shift();
+            this.running++;
+            fn()
+              .then(resolve)
+              .catch(reject)
+              .finally(() => {
+                this.running--;
+                this.next();
+              });
+          }
+        }
+        clear() {
+          this.queue = [];
+        }
+      }
+
+      const thumbnailQueue = new AsyncQueue(8);
 
       // Application State (stores only lightweight JSON metadata in RAM)
       const state = {
@@ -1300,22 +1411,23 @@
         allMedia: [],               // Lightweight metadata items (No File blobs in memory!)
         mappedMedia: [],            // Filtered media with valid GPS
         filteredMedia: [],          // Active subset based on filter
-        currentLocationItems: [],   // Bottom tray items
         currentLightboxIndex: 0,
         currentLightboxList: [],
         currentYearFilter: 'all',
         currentTypeFilter: 'all',
         isHeatmapActive: false,
         activeView: 'map',          // 'map' or 'grid'
-        
+
         // Memory-safe LRU Object URL cache
         objectUrlMap: new Map(),    // key: item.id -> { url, lastUsed }
-        
+
         // Directory Handle Cache for on-demand lazy file retrieval
         fileHandlesMap: new Map(),  // key: item.id -> FileSystemFileHandle
-        
-        // Virtualized Grid State
+        dirHandlesCache: new Map(), // key: relativeDirPath -> FileSystemDirectoryHandle
+
+        // Virtualized Grid States
         gridRenderedCount: 0,
+        trayCurrentList: [],
         trayRenderedCount: 0,
       };
 
@@ -1326,6 +1438,7 @@
 
       // Intersection Observers for Virtualization
       let gridIntersectionObserver = null;
+      let trayIntersectionObserver = null;
       let imageLazyObserver = null;
 
       // DOM Elements
@@ -1370,6 +1483,7 @@
       const trayHeading = document.getElementById('tray-heading');
       const trayCount = document.getElementById('tray-count');
       const trayGrid = document.getElementById('tray-grid');
+      const traySentinel = document.getElementById('tray-sentinel');
       const btnCloseTray = document.getElementById('btn-close-tray');
 
       const allPhotosGrid = document.getElementById('all-photos-grid');
@@ -1471,6 +1585,7 @@
           URL.revokeObjectURL(entry.url);
         }
         state.objectUrlMap.clear();
+        thumbnailQueue.clear();
       }
 
       function getCachedObjectURL(id) {
@@ -1484,10 +1599,9 @@
 
       function storeObjectURL(id, url) {
         if (state.objectUrlMap.size >= MAX_OBJECT_URL_CACHE) {
-          // Evict oldest 15 items
           let entries = Array.from(state.objectUrlMap.entries())
             .sort((a, b) => a[1].lastUsed - b[1].lastUsed);
-          for (let i = 0; i < 15 && i < entries.length; i++) {
+          for (let i = 0; i < 20 && i < entries.length; i++) {
             const [oldId, oldEntry] = entries[i];
             URL.revokeObjectURL(oldEntry.url);
             state.objectUrlMap.delete(oldId);
@@ -1497,31 +1611,39 @@
         return url;
       }
 
-      // Lazy File Resolver: Get actual File object from directory tree on demand
+      // Fast cached Directory Handle resolver
+      async function getDirHandleForPath(relativePath) {
+        if (!relativePath) return state.rootHandle;
+        if (state.dirHandlesCache.has(relativePath)) {
+          return state.dirHandlesCache.get(relativePath);
+        }
+        if (!state.rootHandle) return null;
+
+        let currentDir = state.rootHandle;
+        const parts = relativePath.split('/').filter(Boolean);
+        for (const part of parts) {
+          currentDir = await currentDir.getDirectoryHandle(part);
+        }
+        state.dirHandlesCache.set(relativePath, currentDir);
+        return currentDir;
+      }
+
+      // Lazy File Resolver
       async function resolveFileItem(item) {
         if (state.fileHandlesMap.has(item.id)) {
           const handle = state.fileHandlesMap.get(item.id);
           return await handle.getFile();
         }
 
-        // On-demand path resolution from root directory handle
-        if (state.rootHandle) {
-          try {
-            let currentDir = state.rootHandle;
-            if (item.path) {
-              const parts = item.path.split('/');
-              for (const part of parts) {
-                if (part) {
-                  currentDir = await currentDir.getDirectoryHandle(part);
-                }
-              }
-            }
-            const fileHandle = await currentDir.getFileHandle(item.name);
+        try {
+          const dirHandle = await getDirHandleForPath(item.path);
+          if (dirHandle) {
+            const fileHandle = await dirHandle.getFileHandle(item.name);
             state.fileHandlesMap.set(item.id, fileHandle);
             return await fileHandle.getFile();
-          } catch (e) {
-            console.warn('Could not resolve file path:', item.id, e);
           }
+        } catch (e) {
+          console.warn('Could not resolve file:', item.id, e);
         }
         return null;
       }
@@ -1558,7 +1680,7 @@
       }
 
       // ==========================================
-      // Leaflet Map Logic
+      // Leaflet Map Logic (Lag-Free Clustering)
       // ==========================================
       function initMap() {
         if (map) return;
@@ -1572,18 +1694,20 @@
           zoomControl: true
         });
 
-        // CartoDB Voyager tiles for sleek modern look
+        // CartoDB Voyager tiles
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
           maxZoom: 20
         }).addTo(map);
 
-        // MarkerCluster Group
+        // MarkerCluster Group configured for ultra-high performance (NO SPIDERFY LAG)
         markerClusterGroup = L.markerClusterGroup({
           showCoverageOnHover: false,
-          maxClusterRadius: 50,
-          spiderfyOnMaxZoom: true,
+          maxClusterRadius: 45,
+          spiderfyOnMaxZoom: false, // CRITICAL: Disable spiderfying into giant lagging webs
+          zoomToBoundsOnClick: true,
+          animate: true,
           iconCreateFunction: function (cluster) {
             const count = cluster.getChildCount();
             let cClass = 'cluster-small';
@@ -1591,10 +1715,10 @@
 
             if (count > 100) {
               cClass = 'cluster-large';
-              size = 54;
+              size = 52;
             } else if (count > 25) {
               cClass = 'cluster-medium';
-              size = 48;
+              size = 46;
             }
 
             return L.divIcon({
@@ -1605,11 +1729,11 @@
           }
         });
 
-        // Cluster Click Handler -> Open Bottom Tray with cluster photos
+        // Cluster Click Handler -> Smoothly open Bottom Tray with cluster photos
         markerClusterGroup.on('clusterclick', function (a) {
           const markers = a.layer.getAllChildMarkers();
           const items = markers.map(m => m.mediaItem);
-          showBottomTray(items, `Cluster (${items.length} items)`);
+          showBottomTray(items, `Cluster (${items.length.toLocaleString()} items)`);
         });
 
         map.addLayer(markerClusterGroup);
@@ -1684,7 +1808,7 @@
       }
 
       // ==========================================
-      // Virtualized Media Card & Lazy Loading
+      // Virtualized Lazy Media Cards
       // ==========================================
       function setupLazyImageObserver() {
         if (imageLazyObserver) {
@@ -1692,7 +1816,7 @@
         }
 
         imageLazyObserver = new IntersectionObserver((entries, observer) => {
-          entries.forEach(async (entry) => {
+          entries.forEach((entry) => {
             if (entry.isIntersecting) {
               const card = entry.target;
               observer.unobserve(card);
@@ -1701,35 +1825,36 @@
               const item = state.allMedia.find(m => m.id === itemId);
 
               if (item) {
-                try {
-                  const fileUrl = await getFileObjectUrl(item);
-                  const skeleton = card.querySelector('.card-skeleton');
-                  if (skeleton) skeleton.remove();
+                // Queue thumbnail retrieval with concurrency limit (prevents UI freeze)
+                thumbnailQueue.add(async () => {
+                  try {
+                    const fileUrl = await getFileObjectUrl(item);
+                    const skeleton = card.querySelector('.card-skeleton');
+                    if (skeleton) skeleton.remove();
 
-                  if (fileUrl) {
-                    if (isVideo) {
-                      const videoEl = document.createElement('video');
-                      videoEl.src = `${fileUrl}#t=0.5`;
-                      videoEl.preload = 'metadata';
-                      videoEl.muted = true;
-                      videoEl.playsInline = true;
-                      card.prepend(videoEl);
-                    } else {
-                      const imgEl = document.createElement('img');
-                      imgEl.src = fileUrl;
-                      imgEl.alt = item.name;
-                      card.prepend(imgEl);
+                    if (fileUrl) {
+                      if (isVideo) {
+                        const videoEl = document.createElement('video');
+                        videoEl.src = `${fileUrl}#t=0.5`;
+                        videoEl.preload = 'metadata';
+                        videoEl.muted = true;
+                        videoEl.playsInline = true;
+                        card.prepend(videoEl);
+                      } else {
+                        const imgEl = document.createElement('img');
+                        imgEl.src = fileUrl;
+                        imgEl.alt = item.name;
+                        card.prepend(imgEl);
+                      }
                     }
-                  } else {
-                    card.innerHTML += `<div style="padding:20px;text-align:center;color:#64748b;font-size:0.75rem;">Unavailable</div>`;
+                  } catch (e) {
+                    console.warn('Error rendering thumbnail:', item.id, e);
                   }
-                } catch (e) {
-                  console.warn('Error loading thumbnail:', item.id, e);
-                }
+                });
               }
             }
           });
-        }, { rootMargin: '200px' });
+        }, { rootMargin: '250px' });
       }
 
       function createMediaCardElement(item, listContext, index) {
@@ -1738,15 +1863,15 @@
         card.dataset.id = item.id;
         card.dataset.isVideo = item.isVideo ? 'true' : 'false';
 
-        let locationBadge = item.hasGps 
-          ? '<span style="color:#34d399;">📍 Mapped</span>' 
+        let locationBadge = item.hasGps
+          ? '<span style="color:#34d399;">📍 Mapped</span>'
           : '<span style="color:#94a3b8;">No GPS</span>';
 
         card.innerHTML = `
           <div class="card-skeleton">${item.isVideo ? '🎥' : '📷'}</div>
           ${item.isVideo ? '<div class="card-badge-top">🎥 Video</div>' : ''}
           <div class="card-info-bottom">
-            <span class="card-info-title">${item.name}</span>
+            <span class="card-info-title" title="${item.name}">${item.name}</span>
             <span>${locationBadge}</span>
           </div>
         `;
@@ -1763,22 +1888,54 @@
       }
 
       // ==========================================
-      // Bottom Tray (Cluster / Single Marker)
+      // Bottom Tray (Virtualized Batch Loading)
       // ==========================================
       function showBottomTray(items, title) {
-        state.currentLocationItems = items;
+        state.trayCurrentList = items;
+        state.trayRenderedCount = 0;
         trayHeading.textContent = title || 'Location Photos';
         trayCount.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
         trayGrid.innerHTML = '';
 
         setupLazyImageObserver();
-
-        items.forEach((item, index) => {
-          const card = createMediaCardElement(item, items, index);
-          trayGrid.appendChild(card);
-        });
+        renderTrayBatch();
+        setupTrayInfiniteScroll();
 
         bottomTray.classList.add('open');
+      }
+
+      function renderTrayBatch() {
+        const start = state.trayRenderedCount;
+        const end = Math.min(start + BATCH_RENDER_SIZE, state.trayCurrentList.length);
+
+        for (let i = start; i < end; i++) {
+          const item = state.trayCurrentList[i];
+          const card = createMediaCardElement(item, state.trayCurrentList, i);
+          trayGrid.appendChild(card);
+        }
+
+        state.trayRenderedCount = end;
+
+        if (state.trayRenderedCount < state.trayCurrentList.length) {
+          traySentinel.style.display = 'flex';
+          trayGrid.appendChild(traySentinel);
+        } else {
+          traySentinel.style.display = 'none';
+        }
+      }
+
+      function setupTrayInfiniteScroll() {
+        if (trayIntersectionObserver) {
+          trayIntersectionObserver.disconnect();
+        }
+
+        trayIntersectionObserver = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting && state.trayRenderedCount < state.trayCurrentList.length) {
+            renderTrayBatch();
+          }
+        }, { root: trayGrid, rootMargin: '200px' });
+
+        trayIntersectionObserver.observe(traySentinel);
       }
 
       function closeBottomTray() {
@@ -2162,6 +2319,7 @@
         state.mappedMedia = [];
         state.filteredMedia = [];
         state.fileHandlesMap.clear();
+        state.dirHandlesCache.clear();
         clearObjectUrlCache();
 
         let totalFilesEncountered = 0;
@@ -2192,7 +2350,7 @@
 
                 try {
                   const file = await entry.getFile();
-                  
+
                   // Lightweight record (No file blob stored in long-lived state!)
                   const mediaItem = {
                     id: itemId,
@@ -2403,4 +2561,5 @@
     })();
   </script>
 </body>
+
 </html>

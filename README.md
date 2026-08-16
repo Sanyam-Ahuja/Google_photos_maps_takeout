@@ -8,9 +8,9 @@
 ## ✨ Features
 
 - 📍 **Interactive Geographic Map**: Explore all your photos and videos mapped by their GPS coordinates.
-- ⚡ **Lightweight JSON Caching (`photomap_index.json`)**: Automatically saves an index inside your photos folder. Reopening large collections (10,000+ photos) takes **< 100 milliseconds** with near-zero RAM usage (< 30 MB).
+- ⚡ **Lightweight JSON Caching (`photomap_index.json`)**: Automatically saves an index inside your photos folder. Reopening large collections (10,000+ photos) loads in **< 100 milliseconds**.
 - 💾 **Dual-Layer Persistence**: Caches metadata to both `photomap_index.json` and browser **IndexedDB** for instant reloads.
-- 🚀 **RAM-Safe Architecture**: Uses lazy file resolution and virtualized gallery chunking to prevent memory bloat and browser tab crashes.
+- 🚀 **High-Performance Architecture**: Lazy file resolution and in-memory URL caching prevent tab crashes while keeping thousands of thumbnails instantly accessible in memory without re-fetching from disk.
 - 🔍 **Cluster & Heatmap Views**:
   - Marker clusters with count indicators.
   - Heatmap mode to visualize travel hotspots and location density.
