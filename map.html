@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhotoMap — Local Photo &amp; Video Map</title>
+  <meta name="description" content="Explore your local photos and videos on an interactive geographic map. 100% private, offline, lightweight JSON indexed." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet MarkerCluster JS -->
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <!-- Leaflet Heatmap JS -->
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <!-- Exifr (EXIF/GPS metadata parser) -->
+  <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+
+  <style>
+    :root {
+      --bg-main: #0c1017;
+      --bg-surface: #151b26;
+      --bg-card: #1c2433;
+      --bg-card-hover: #242f42;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #4f46e5;
+      --accent-secondary: #06b6d4;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-surface);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      height: 64px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      color: #fff;
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: nowrap;
+    }
+
+    /* Interactive UI Elements */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary) 0%, #4f46e5 100%);
+      color: white;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 6px 11px;
+      font-size: 0.78rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .select-dropdown {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      padding: 7px 12px;
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .select-dropdown:hover, .select-dropdown:focus {
+      border-color: var(--border-focus);
+    }
+
+    .select-dropdown option {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+    }
+
+    .segmented-control {
+      display: inline-flex;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .segmented-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 5px 11px;
+      border-radius: calc(var(--radius-md) - 3px);
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .segmented-btn.active {
+      background: var(--bg-card-hover);
+      color: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #818cf8;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .stat-badge-success {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+    }
+
+    /* Menu Dropdown */
+    .dropdown-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      min-width: 190px;
+      padding: 6px;
+      z-index: 1100;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .dropdown-menu.show {
+      display: flex;
+      animation: fadeInDown 0.15s ease-out;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .dropdown-item:hover {
+      background: var(--bg-card-hover);
+      color: #fff;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 4px 0;
+    }
+
+    /* Toast Notification */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: var(--radius-lg);
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      animation: toastSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes toastSlideUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Main Container Views */
+    #app-container {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+    }
+
+    /* Map Layer */
+    #map-view {
+      width: 100%;
+      height: 100%;
+      background: #0b0f19;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    /* Leaflet customization for dark theme */
+    .leaflet-container {
+      background: #0b0f19 !important;
+      font-family: var(--font-sans) !important;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-surface) !important;
+      color: var(--text-primary) !important;
+      border-radius: var(--radius-md) !important;
+      border: 1px solid var(--border-subtle) !important;
+      box-shadow: var(--shadow-lg) !important;
+      padding: 0 !important;
+      overflow: hidden;
+    }
+
+    .leaflet-popup-content {
+      margin: 0 !important;
+      line-height: 1.4 !important;
+    }
+
+    .leaflet-popup-tip {
+      background: var(--bg-surface) !important;
+      border: 1px solid var(--border-subtle) !important;
+    }
+
+    .leaflet-control-zoom a {
+      background-color: var(--bg-surface) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-subtle) !important;
+    }
+    .leaflet-control-zoom a:hover {
+      background-color: var(--bg-card-hover) !important;
+      color: #fff !important;
+    }
+
+    /* Custom Leaflet Marker Clusters */
+    .custom-cluster-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-weight: 700;
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      border: 2.5px solid rgba(255, 255, 255, 0.9);
+      user-select: none;
+    }
+    .custom-cluster-marker:hover {
+      transform: scale(1.15);
+      z-index: 1000 !important;
+    }
+    .cluster-small {
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      font-size: 13px;
+    }
+    .cluster-medium {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      font-size: 14px;
+    }
+    .cluster-large {
+      background: linear-gradient(135deg, #ec4899, #f43f5e);
+      font-size: 15px;
+    }
+
+    .single-photo-marker {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      background: #1e293b;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .single-photo-marker:hover {
+      transform: scale(1.25);
+      border-color: #6366f1;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.6);
+      z-index: 1000 !important;
+    }
+
+    /* Bottom Location Drawer / Cluster Media Tray */
+    #bottom-tray {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-subtle);
+      z-index: 500;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      max-height: 48vh;
+    }
+
+    #bottom-tray.open {
+      transform: translateY(0);
+    }
+
+    .tray-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .tray-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .tray-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .tray-close-btn:hover {
+      background: var(--bg-card);
+      color: #fff;
+    }
+
+    .tray-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Media Grid View (All Photos View) */
+    #grid-view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-main);
+      z-index: 2;
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    #grid-view.active {
+      display: flex;
+    }
+
+    .gallery-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .media-card {
+      position: relative;
+      aspect-ratio: 1/1;
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .media-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-focus);
+    }
+
+    .media-card img, .media-card video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #0f172a;
+    }
+
+    .media-card .card-skeleton {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(110deg, #1e293b 8%, #334155 18%, #1e293b 33%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s linear infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 1.5rem;
+    }
+
+    @keyframes shimmer {
+      to { background-position-x: -200%; }
+    }
+
+    .media-card .card-badge-top {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 2;
+    }
+
+    .media-card .card-info-bottom {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
+      padding: 20px 10px 8px;
+      font-size: 0.75rem;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      z-index: 2;
+    }
+
+    .media-card .card-info-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 75%;
+    }
+
+    .grid-sentinel {
+      width: 100%;
+      height: 40px;
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    /* Welcome / Folder Picker Hero Screen */
+    #welcome-screen {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+      z-index: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .hero-card {
+      max-width: 580px;
+      width: 100%;
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-xl);
+      padding: 44px 36px;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+      animation: fadeInScale 0.4s ease-out;
+    }
+
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .hero-icon-wrapper {
+      width: 76px;
+      height: 76px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.45);
+    }
+
+    .hero-icon-wrapper svg {
+      width: 42px;
+      height: 42px;
+      color: #fff;
+    }
+
+    .hero-card h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-card p.subtitle {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 26px;
+    }
+
+    .hero-action-btn {
+      width: 100%;
+      padding: 16px 28px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border-radius: var(--radius-lg);
+      margin-bottom: 16px;
+      cursor: pointer;
+    }
+
+    .privacy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      padding: 7px 16px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .feature-bullets {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      text-align: left;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 22px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .feature-item span {
+      color: var(--accent-secondary);
+    }
+
+    .browser-warning {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      margin-top: 16px;
+      text-align: left;
+      line-height: 1.5;
+    }
+
+    /* Scanning Progress Modal */
+    #scanning-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 15, 26, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    #scanning-overlay.active {
+      display: flex;
+    }
+
+    .scanning-card {
+      max-width: 520px;
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 36px 30px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .scan-spinner {
+      width: 56px;
+      height: 56px;
+      border: 4px solid rgba(99, 102, 241, 0.15);
+      border-top-color: var(--accent-primary);
+      border-right-color: var(--accent-secondary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6366f1, #06b6d4);
+      border-radius: 999px;
+      transition: width 0.15s ease;
+    }
+
+    .scan-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .scan-stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 8px;
+    }
+
+    .scan-stat-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      font-family: var(--font-mono);
+    }
+
+    .scan-stat-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .current-file-text {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 8px;
+      max-width: 100%;
+    }
+
+    /* Lightbox Modal / Fullscreen Viewer */
+    #lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 13, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 2000;
+      display: none;
+      flex-direction: column;
+    }
+
+    #lightbox.active {
+      display: flex;
+    }
+
+    .lightbox-header {
+      height: 60px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(15, 23, 42, 0.6);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 10;
+    }
+
+    .lightbox-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 50vw;
+    }
+
+    .lightbox-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lightbox-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    .lightbox-media {
+      max-width: 100%;
+      max-height: calc(100vh - 160px);
+      object-fit: contain;
+      border-radius: var(--radius-md);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      user-select: none;
+    }
+
+    .lightbox-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    .lightbox-nav-btn:hover {
+      background: rgba(99, 102, 241, 0.8);
+      transform: translateY(-50%) scale(1.1);
+    }
+    .lightbox-prev { left: 24px; }
+    .lightbox-next { right: 24px; }
+
+    .lightbox-footer {
+      height: 70px;
+      padding: 0 24px;
+      background: rgba(15, 23, 42, 0.85);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.825rem;
+      color: var(--text-secondary);
+      z-index: 10;
+    }
+
+    .lightbox-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lightbox-meta-item strong {
+      color: var(--text-primary);
+    }
+
+    /* Floating Map Tool Box */
+    .map-floating-box {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 400;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .map-action-pill {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+    }
+    .map-action-pill:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    /* Hidden file input for manual JSON import */
+    #hidden-json-input {
+      display: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      header { padding: 0 12px; }
+      .brand-text p { display: none; }
+      .feature-bullets { grid-template-columns: 1fr; }
+      .lightbox-footer { flex-direction: column; height: auto; padding: 12px; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header>
+    <div class="brand" id="btn-brand" title="PhotoMap Home">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+          <line x1="15" y1="6" x2="15" y2="21"></line>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>PhotoMap</h1>
+        <p>Lightweight JSON Cached</p>
+      </div>
+    </div>
+
+    <!-- Active Session Controls (Visible once folder is loaded) -->
+    <div class="header-controls" id="header-controls" style="display: none;">
+      <!-- Stat Badge -->
+      <div class="stat-badge" id="mapped-stat-badge">
+        <span id="stat-mapped-count">0</span> mapped
+      </div>
+
+      <!-- Timeline Year Filter -->
+      <select id="timeline-select" class="select-dropdown" title="Filter by Year">
+        <option value="all">📅 All Photos</option>
+      </select>
+
+      <!-- Media Type Filter -->
+      <select id="media-type-select" class="select-dropdown" title="Filter media type">
+        <option value="all">All Media</option>
+        <option value="photo">📷 Photos</option>
+        <option value="video">🎥 Videos</option>
+      </select>
+
+      <!-- View Toggle (Map vs Grid) -->
+      <div class="segmented-control">
+        <button id="btn-view-map" class="segmented-btn active">
+          🗺️ Map
+        </button>
+        <button id="btn-view-grid" class="segmented-btn">
+          🖼️ All Photos (<span id="all-photos-count">0</span>)
+        </button>
+      </div>
+
+      <!-- Re-Scan Button -->
+      <button id="btn-rescan" class="btn btn-secondary btn-sm" title="Force re-scan folder and update index">
+        ⚡ Re-scan
+      </button>
+
+      <!-- Options Dropdown Menu -->
+      <div class="dropdown-container">
+        <button id="btn-more-options" class="btn btn-secondary btn-sm" title="More Options">
+          ⚙️
+        </button>
+        <div class="dropdown-menu" id="options-dropdown">
+          <button class="dropdown-item" id="menu-export-json">
+            💾 Export Index (JSON)
+          </button>
+          <button class="dropdown-item" id="menu-import-json">
+            📂 Import Index (JSON)
+          </button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" id="menu-change-folder">
+            📁 Select Another Folder
+          </button>
+        </div>
+      </div>
+
+      <!-- Open New Folder -->
+      <button id="btn-change-folder" class="btn btn-secondary btn-sm" title="Select a different folder">
+        📁 Folder
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <div id="app-container">
+
+    <!-- Leaflet Map View -->
+    <div id="map-view"></div>
+
+    <!-- Floating Map Controls -->
+    <div class="map-floating-box" id="map-floating-box" style="display: none;">
+      <button class="map-action-pill" id="btn-fit-world" title="Fit all mapped photos in view">
+        🌍 Reset View
+      </button>
+      <button class="map-action-pill" id="btn-toggle-heatmap" title="Toggle Heatmap Density View">
+        🔥 Heatmap: <span id="heatmap-status">Off</span>
+      </button>
+    </div>
+
+    <!-- Bottom Location Drawer (Opens on cluster/marker click) -->
+    <div id="bottom-tray">
+      <div class="tray-header">
+        <div class="tray-title">
+          <span>📍</span>
+          <span id="tray-heading">Location Photos</span>
+          <span class="stat-badge" id="tray-count">0 items</span>
+        </div>
+        <button class="tray-close-btn" id="btn-close-tray" title="Close drawer">✕</button>
+      </div>
+      <div class="tray-grid" id="tray-grid">
+        <!-- Thumbnails populated dynamically -->
+      </div>
+    </div>
+
+    <!-- All Photos Grid View -->
+    <div id="grid-view">
+      <div class="gallery-container" id="all-photos-grid">
+        <!-- Media cards populated dynamically with virtualized chunking -->
+      </div>
+      <div class="grid-sentinel" id="grid-sentinel" style="display: none;">
+        <span>Loading more items...</span>
+      </div>
+    </div>
+
+    <!-- Welcome / Folder Picker Screen -->
+    <div id="welcome-screen">
+      <div class="hero-card">
+        <div class="hero-icon-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+        </div>
+        <h2>Explore Your Photos</h2>
+        <p class="subtitle">
+          View your local photo &amp; video library on an interactive map. Automatically cached in <code>photomap_index.json</code> for instant reloads and ultra-low RAM usage.
+        </p>
+
+        <div class="privacy-badge">
+          🔒 100% Private &amp; Offline — Runs directly in your browser
+        </div>
+
+        <button id="btn-select-folder" class="btn btn-primary hero-action-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          Select Photos Folder
+        </button>
+
+        <div class="feature-bullets">
+          <div class="feature-item"><span>⚡</span> Instant JSON Caching</div>
+          <div class="feature-item"><span>🚀</span> Ultra-low RAM &amp; No Crashes</div>
+          <div class="feature-item"><span>📍</span> GPS &amp; Date EXIF Extraction</div>
+          <div class="feature-item"><span>🖼️</span> JPG, PNG, WEBP, HEIC &amp; Video</div>
+        </div>
+
+        <div class="browser-warning" id="browser-warning">
+          ⚠️ <strong>Browser Notice:</strong> Your browser does not support the modern folder picker. Please open <code>map.html</code> in <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> for the best experience.
+        </div>
+      </div>
+    </div>
+
+    <!-- Scanning Overlay Modal -->
+    <div id="scanning-overlay">
+      <div class="scanning-card">
+        <div class="scan-spinner"></div>
+        <h3 id="scan-title" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">Scanning your photos...</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);" id="scan-status-msg">Searching through subdirectories and reading metadata</p>
+
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="scan-progress-bar"></div>
+        </div>
+
+        <div class="scan-stats-grid">
+          <div class="scan-stat-box">
+            <div class="scan-stat-value" id="scan-total-files">0</div>
+            <div class="scan-stat-label">Files Scanned</div>
+          </div>
+          <div class="scan-stat-box">
+            <div class="scan-stat-value" id="scan-media-count">0</div>
+            <div class="scan-stat-label">📷 / 🎥 Media</div>
+          </div>
+          <div class="scan-stat-box">
+            <div class="scan-stat-value" id="scan-gps-count" style="color: #34d399;">0</div>
+            <div class="scan-stat-label">📍 With GPS</div>
+          </div>
+        </div>
+
+        <div class="current-file-text" id="scan-current-file">Initializing...</div>
+
+        <button id="btn-finish-scan-early" class="btn btn-secondary btn-sm" style="margin-top: 18px; display: none;">
+          Finish and View Results
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Lightbox Modal / Fullscreen Viewer -->
+  <div id="lightbox">
+    <div class="lightbox-header">
+      <div class="lightbox-title" id="lb-filename">Photo Name</div>
+      <div class="lightbox-controls">
+        <span class="stat-badge" id="lb-index">1 / 10</span>
+        <button class="btn btn-secondary btn-sm" id="lb-btn-maps" target="_blank" title="View on Google Maps">
+          📍 Open in Maps
+        </button>
+        <button class="btn btn-secondary btn-sm" id="lb-btn-close" title="Close (Esc)">
+          ✕ Close
+        </button>
+      </div>
+    </div>
+
+    <div class="lightbox-main">
+      <button class="lightbox-nav-btn lightbox-prev" id="lb-prev" title="Previous photo (Left Arrow)">❮</button>
+      
+      <div id="lb-media-container" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+        <!-- Image or Video dynamically rendered -->
+      </div>
+
+      <button class="lightbox-nav-btn lightbox-next" id="lb-next" title="Next photo (Right Arrow)">❯</button>
+    </div>
+
+    <div class="lightbox-footer">
+      <div class="lightbox-meta-item">
+        <span>📅 Date Taken:</span>
+        <strong id="lb-date">—</strong>
+      </div>
+      <div class="lightbox-meta-item">
+        <span>📍 Coordinates:</span>
+        <strong id="lb-coords">—</strong>
+      </div>
+      <div class="lightbox-meta-item">
+        <span>📁 Size:</span>
+        <strong id="lb-size">—</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Hidden File Input for JSON import -->
+  <input type="file" id="hidden-json-input" accept=".json" />
+
+  <!-- Main Application Logic -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Supported Media Extensions
+      const PHOTO_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'avif', 'gif', 'bmp', 'tiff']);
+      const VIDEO_EXTENSIONS = new Set(['mp4', 'mov', 'mkv', 'avi', 'webm', 'm4v', '3gp']);
+      const CACHE_INDEX_FILENAME = 'photomap_index.json';
+      const BATCH_RENDER_SIZE = 60;
+      const MAX_OBJECT_URL_CACHE = 80;
+
+      // Application State (stores only lightweight JSON metadata in RAM)
+      const state = {
+        rootHandle: null,           // FileSystemDirectoryHandle of the opened folder
+        folderName: '',             // Selected directory name
+        allMedia: [],               // Lightweight metadata items (No File blobs in memory!)
+        mappedMedia: [],            // Filtered media with valid GPS
+        filteredMedia: [],          // Active subset based on filter
+        currentLocationItems: [],   // Bottom tray items
+        currentLightboxIndex: 0,
+        currentLightboxList: [],
+        currentYearFilter: 'all',
+        currentTypeFilter: 'all',
+        isHeatmapActive: false,
+        activeView: 'map',          // 'map' or 'grid'
+        
+        // Memory-safe LRU Object URL cache
+        objectUrlMap: new Map(),    // key: item.id -> { url, lastUsed }
+        
+        // Directory Handle Cache for on-demand lazy file retrieval
+        fileHandlesMap: new Map(),  // key: item.id -> FileSystemFileHandle
+        
+        // Virtualized Grid State
+        gridRenderedCount: 0,
+        trayRenderedCount: 0,
+      };
+
+      // Leaflet Map & Layers
+      let map = null;
+      let markerClusterGroup = null;
+      let heatLayer = null;
+
+      // Intersection Observers for Virtualization
+      let gridIntersectionObserver = null;
+      let imageLazyObserver = null;
+
+      // DOM Elements
+      const welcomeScreen = document.getElementById('welcome-screen');
+      const scanningOverlay = document.getElementById('scanning-overlay');
+      const headerControls = document.getElementById('header-controls');
+      const browserWarning = document.getElementById('browser-warning');
+      const btnSelectFolder = document.getElementById('btn-select-folder');
+      const btnChangeFolder = document.getElementById('btn-change-folder');
+      const btnRescan = document.getElementById('btn-rescan');
+      const btnBrand = document.getElementById('btn-brand');
+
+      const btnMoreOptions = document.getElementById('btn-more-options');
+      const optionsDropdown = document.getElementById('options-dropdown');
+      const menuExportJson = document.getElementById('menu-export-json');
+      const menuImportJson = document.getElementById('menu-import-json');
+      const menuChangeFolder = document.getElementById('menu-change-folder');
+      const hiddenJsonInput = document.getElementById('hidden-json-input');
+
+      const scanProgressBar = document.getElementById('scan-progress-bar');
+      const scanTotalFiles = document.getElementById('scan-total-files');
+      const scanMediaCount = document.getElementById('scan-media-count');
+      const scanGpsCount = document.getElementById('scan-gps-count');
+      const scanCurrentFile = document.getElementById('scan-current-file');
+      const btnFinishScanEarly = document.getElementById('btn-finish-scan-early');
+
+      const timelineSelect = document.getElementById('timeline-select');
+      const mediaTypeSelect = document.getElementById('media-type-select');
+      const statMappedCount = document.getElementById('stat-mapped-count');
+      const allPhotosCount = document.getElementById('all-photos-count');
+
+      const btnViewMap = document.getElementById('btn-view-map');
+      const btnViewGrid = document.getElementById('btn-view-grid');
+      const mapView = document.getElementById('map-view');
+      const gridView = document.getElementById('grid-view');
+      const mapFloatingBox = document.getElementById('map-floating-box');
+      const btnFitWorld = document.getElementById('btn-fit-world');
+      const btnToggleHeatmap = document.getElementById('btn-toggle-heatmap');
+      const heatmapStatus = document.getElementById('heatmap-status');
+
+      const bottomTray = document.getElementById('bottom-tray');
+      const trayHeading = document.getElementById('tray-heading');
+      const trayCount = document.getElementById('tray-count');
+      const trayGrid = document.getElementById('tray-grid');
+      const btnCloseTray = document.getElementById('btn-close-tray');
+
+      const allPhotosGrid = document.getElementById('all-photos-grid');
+      const gridSentinel = document.getElementById('grid-sentinel');
+
+      const lightbox = document.getElementById('lightbox');
+      const lbFilename = document.getElementById('lb-filename');
+      const lbIndex = document.getElementById('lb-index');
+      const lbMediaContainer = document.getElementById('lb-media-container');
+      const lbDate = document.getElementById('lb-date');
+      const lbCoords = document.getElementById('lb-coords');
+      const lbSize = document.getElementById('lb-size');
+      const lbBtnMaps = document.getElementById('lb-btn-maps');
+      const lbBtnClose = document.getElementById('lb-btn-close');
+      const lbPrev = document.getElementById('lb-prev');
+      const lbNext = document.getElementById('lb-next');
+      const toastContainer = document.getElementById('toast-container');
+
+      // Check File System Access API support
+      if (!('showDirectoryPicker' in window)) {
+        browserWarning.style.display = 'block';
+      }
+
+      // ==========================================
+      // Toast Notification System
+      // ==========================================
+      function showToast(message, duration = 3500) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = message;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+          toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(10px) scale(0.95)';
+          setTimeout(() => toast.remove(), 300);
+        }, duration);
+      }
+
+      // ==========================================
+      // IndexedDB Persistent Storage
+      // ==========================================
+      const DB_NAME = 'PhotoMapCacheDB';
+      const DB_VERSION = 1;
+      const STORE_NAME = 'folderIndexes';
+
+      function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME, { keyPath: 'folderName' });
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function saveIndexToIndexedDB(folderName, indexData) {
+        try {
+          const db = await openDB();
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          store.put({
+            folderName: folderName,
+            updatedAt: Date.now(),
+            data: indexData
+          });
+          return new Promise(res => { tx.oncomplete = () => res(true); });
+        } catch (err) {
+          console.warn('Could not save to IndexedDB:', err);
+          return false;
+        }
+      }
+
+      async function loadIndexFromIndexedDB(folderName) {
+        try {
+          const db = await openDB();
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.get(folderName);
+          return new Promise((res) => {
+            req.onsuccess = () => res(req.result ? req.result.data : null);
+            req.onerror = () => res(null);
+          });
+        } catch (err) {
+          console.warn('Could not read from IndexedDB:', err);
+          return null;
+        }
+      }
+
+      // ==========================================
+      // Memory Management: LRU Object URL Cache
+      // ==========================================
+      function clearObjectUrlCache() {
+        for (const [id, entry] of state.objectUrlMap.entries()) {
+          URL.revokeObjectURL(entry.url);
+        }
+        state.objectUrlMap.clear();
+      }
+
+      function getCachedObjectURL(id) {
+        if (state.objectUrlMap.has(id)) {
+          const entry = state.objectUrlMap.get(id);
+          entry.lastUsed = Date.now();
+          return entry.url;
+        }
+        return null;
+      }
+
+      function storeObjectURL(id, url) {
+        if (state.objectUrlMap.size >= MAX_OBJECT_URL_CACHE) {
+          // Evict oldest 15 items
+          let entries = Array.from(state.objectUrlMap.entries())
+            .sort((a, b) => a[1].lastUsed - b[1].lastUsed);
+          for (let i = 0; i < 15 && i < entries.length; i++) {
+            const [oldId, oldEntry] = entries[i];
+            URL.revokeObjectURL(oldEntry.url);
+            state.objectUrlMap.delete(oldId);
+          }
+        }
+        state.objectUrlMap.set(id, { url: url, lastUsed: Date.now() });
+        return url;
+      }
+
+      // Lazy File Resolver: Get actual File object from directory tree on demand
+      async function resolveFileItem(item) {
+        if (state.fileHandlesMap.has(item.id)) {
+          const handle = state.fileHandlesMap.get(item.id);
+          return await handle.getFile();
+        }
+
+        // On-demand path resolution from root directory handle
+        if (state.rootHandle) {
+          try {
+            let currentDir = state.rootHandle;
+            if (item.path) {
+              const parts = item.path.split('/');
+              for (const part of parts) {
+                if (part) {
+                  currentDir = await currentDir.getDirectoryHandle(part);
+                }
+              }
+            }
+            const fileHandle = await currentDir.getFileHandle(item.name);
+            state.fileHandlesMap.set(item.id, fileHandle);
+            return await fileHandle.getFile();
+          } catch (e) {
+            console.warn('Could not resolve file path:', item.id, e);
+          }
+        }
+        return null;
+      }
+
+      async function getFileObjectUrl(item) {
+        const cached = getCachedObjectURL(item.id);
+        if (cached) return cached;
+
+        const file = await resolveFileItem(item);
+        if (!file) return '';
+        const url = URL.createObjectURL(file);
+        return storeObjectURL(item.id, url);
+      }
+
+      // Helper: Format file size
+      function formatBytes(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+      }
+
+      // Helper: Format Date
+      function formatDate(dateObj) {
+        if (!dateObj || isNaN(dateObj.getTime())) return 'Unknown date';
+        return dateObj.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+
+      // ==========================================
+      // Leaflet Map Logic
+      // ==========================================
+      function initMap() {
+        if (map) return;
+
+        map = L.map('map-view', {
+          center: [25, 0],
+          zoom: 2.5,
+          minZoom: 2,
+          maxZoom: 19,
+          worldCopyJump: true,
+          zoomControl: true
+        });
+
+        // CartoDB Voyager tiles for sleek modern look
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 20
+        }).addTo(map);
+
+        // MarkerCluster Group
+        markerClusterGroup = L.markerClusterGroup({
+          showCoverageOnHover: false,
+          maxClusterRadius: 50,
+          spiderfyOnMaxZoom: true,
+          iconCreateFunction: function (cluster) {
+            const count = cluster.getChildCount();
+            let cClass = 'cluster-small';
+            let size = 42;
+
+            if (count > 100) {
+              cClass = 'cluster-large';
+              size = 54;
+            } else if (count > 25) {
+              cClass = 'cluster-medium';
+              size = 48;
+            }
+
+            return L.divIcon({
+              html: `<div class="custom-cluster-marker ${cClass}" style="width: ${size}px; height: ${size}px;">${count}</div>`,
+              className: 'custom-cluster-icon',
+              iconSize: L.point(size, size)
+            });
+          }
+        });
+
+        // Cluster Click Handler -> Open Bottom Tray with cluster photos
+        markerClusterGroup.on('clusterclick', function (a) {
+          const markers = a.layer.getAllChildMarkers();
+          const items = markers.map(m => m.mediaItem);
+          showBottomTray(items, `Cluster (${items.length} items)`);
+        });
+
+        map.addLayer(markerClusterGroup);
+
+        // Close bottom tray when clicking blank map area
+        map.on('click', function () {
+          closeBottomTray();
+        });
+      }
+
+      function renderMapMarkers() {
+        if (!markerClusterGroup) return;
+
+        markerClusterGroup.clearLayers();
+        if (heatLayer && map.hasLayer(heatLayer)) {
+          map.removeLayer(heatLayer);
+          heatLayer = null;
+        }
+
+        const heatPoints = [];
+        const markers = [];
+
+        state.filteredMedia.forEach(item => {
+          if (!item.hasGps) return;
+
+          heatPoints.push([item.latitude, item.longitude, 0.8]);
+
+          // Create individual marker
+          const customIcon = L.divIcon({
+            html: `
+              <div class="single-photo-marker" title="${item.name}">
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1e293b;color:#fff;font-size:16px;">
+                  ${item.isVideo ? '🎥' : '📷'}
+                </div>
+              </div>
+            `,
+            className: 'photo-marker-icon',
+            iconSize: [44, 44],
+            iconAnchor: [22, 22]
+          });
+
+          const marker = L.marker([item.latitude, item.longitude], { icon: customIcon });
+          marker.mediaItem = item;
+
+          marker.on('click', function (e) {
+            L.DomEvent.stopPropagation(e);
+            showBottomTray([item], item.name);
+          });
+
+          markers.push(marker);
+        });
+
+        markerClusterGroup.addLayers(markers);
+
+        // If Heatmap is enabled, create and add heat layer
+        if (state.isHeatmapActive && heatPoints.length > 0) {
+          heatLayer = L.heatLayer(heatPoints, {
+            radius: 28,
+            blur: 18,
+            maxZoom: 14,
+            gradient: { 0.2: '#06b6d4', 0.5: '#6366f1', 0.8: '#ec4899', 1.0: '#f43f5e' }
+          }).addTo(map);
+        }
+
+        // Fit map bounds if there are markers
+        if (markers.length > 0) {
+          const groupBounds = markerClusterGroup.getBounds();
+          if (groupBounds.isValid()) {
+            map.fitBounds(groupBounds, { padding: [50, 50], maxZoom: 15 });
+          }
+        }
+      }
+
+      // ==========================================
+      // Virtualized Media Card & Lazy Loading
+      // ==========================================
+      function setupLazyImageObserver() {
+        if (imageLazyObserver) {
+          imageLazyObserver.disconnect();
+        }
+
+        imageLazyObserver = new IntersectionObserver((entries, observer) => {
+          entries.forEach(async (entry) => {
+            if (entry.isIntersecting) {
+              const card = entry.target;
+              observer.unobserve(card);
+              const itemId = card.dataset.id;
+              const isVideo = card.dataset.isVideo === 'true';
+              const item = state.allMedia.find(m => m.id === itemId);
+
+              if (item) {
+                try {
+                  const fileUrl = await getFileObjectUrl(item);
+                  const skeleton = card.querySelector('.card-skeleton');
+                  if (skeleton) skeleton.remove();
+
+                  if (fileUrl) {
+                    if (isVideo) {
+                      const videoEl = document.createElement('video');
+                      videoEl.src = `${fileUrl}#t=0.5`;
+                      videoEl.preload = 'metadata';
+                      videoEl.muted = true;
+                      videoEl.playsInline = true;
+                      card.prepend(videoEl);
+                    } else {
+                      const imgEl = document.createElement('img');
+                      imgEl.src = fileUrl;
+                      imgEl.alt = item.name;
+                      card.prepend(imgEl);
+                    }
+                  } else {
+                    card.innerHTML += `<div style="padding:20px;text-align:center;color:#64748b;font-size:0.75rem;">Unavailable</div>`;
+                  }
+                } catch (e) {
+                  console.warn('Error loading thumbnail:', item.id, e);
+                }
+              }
+            }
+          });
+        }, { rootMargin: '200px' });
+      }
+
+      function createMediaCardElement(item, listContext, index) {
+        const card = document.createElement('div');
+        card.className = 'media-card';
+        card.dataset.id = item.id;
+        card.dataset.isVideo = item.isVideo ? 'true' : 'false';
+
+        let locationBadge = item.hasGps 
+          ? '<span style="color:#34d399;">📍 Mapped</span>' 
+          : '<span style="color:#94a3b8;">No GPS</span>';
+
+        card.innerHTML = `
+          <div class="card-skeleton">${item.isVideo ? '🎥' : '📷'}</div>
+          ${item.isVideo ? '<div class="card-badge-top">🎥 Video</div>' : ''}
+          <div class="card-info-bottom">
+            <span class="card-info-title">${item.name}</span>
+            <span>${locationBadge}</span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          openLightbox(listContext, index);
+        });
+
+        if (imageLazyObserver) {
+          imageLazyObserver.observe(card);
+        }
+
+        return card;
+      }
+
+      // ==========================================
+      // Bottom Tray (Cluster / Single Marker)
+      // ==========================================
+      function showBottomTray(items, title) {
+        state.currentLocationItems = items;
+        trayHeading.textContent = title || 'Location Photos';
+        trayCount.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
+        trayGrid.innerHTML = '';
+
+        setupLazyImageObserver();
+
+        items.forEach((item, index) => {
+          const card = createMediaCardElement(item, items, index);
+          trayGrid.appendChild(card);
+        });
+
+        bottomTray.classList.add('open');
+      }
+
+      function closeBottomTray() {
+        bottomTray.classList.remove('open');
+      }
+
+      // ==========================================
+      // All Photos Grid View (Virtualized Infinite Scroll)
+      // ==========================================
+      function renderAllPhotosGrid(reset = true) {
+        if (reset) {
+          allPhotosGrid.innerHTML = '';
+          state.gridRenderedCount = 0;
+          setupLazyImageObserver();
+          setupGridInfiniteScroll();
+        }
+
+        if (state.filteredMedia.length === 0) {
+          allPhotosGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+              <h3>No media items match the current filter.</h3>
+            </div>
+          `;
+          gridSentinel.style.display = 'none';
+          return;
+        }
+
+        const start = state.gridRenderedCount;
+        const end = Math.min(start + BATCH_RENDER_SIZE, state.filteredMedia.length);
+
+        for (let i = start; i < end; i++) {
+          const item = state.filteredMedia[i];
+          const card = createMediaCardElement(item, state.filteredMedia, i);
+          allPhotosGrid.appendChild(card);
+        }
+
+        state.gridRenderedCount = end;
+
+        if (state.gridRenderedCount < state.filteredMedia.length) {
+          gridSentinel.style.display = 'flex';
+          allPhotosGrid.appendChild(gridSentinel);
+        } else {
+          gridSentinel.style.display = 'none';
+        }
+      }
+
+      function setupGridInfiniteScroll() {
+        if (gridIntersectionObserver) {
+          gridIntersectionObserver.disconnect();
+        }
+
+        gridIntersectionObserver = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting && state.gridRenderedCount < state.filteredMedia.length) {
+            renderAllPhotosGrid(false);
+          }
+        }, { root: gridView, rootMargin: '300px' });
+
+        gridIntersectionObserver.observe(gridSentinel);
+      }
+
+      // ==========================================
+      // Filters (Timeline & Media Type)
+      // ==========================================
+      function applyFilters() {
+        const year = state.currentYearFilter;
+        const type = state.currentTypeFilter;
+
+        state.filteredMedia = state.allMedia.filter(item => {
+          if (year !== 'all') {
+            if (!item.year || item.year.toString() !== year) {
+              return false;
+            }
+          }
+          if (type === 'photo' && item.isVideo) return false;
+          if (type === 'video' && !item.isVideo) return false;
+          return true;
+        });
+
+        const mappedCount = state.filteredMedia.filter(i => i.hasGps).length;
+        statMappedCount.textContent = mappedCount.toLocaleString();
+        allPhotosCount.textContent = state.filteredMedia.length.toLocaleString();
+
+        if (state.activeView === 'map') {
+          renderMapMarkers();
+        } else {
+          renderAllPhotosGrid(true);
+        }
+      }
+
+      function updateTimelineDropdown() {
+        const yearsSet = new Set();
+        state.allMedia.forEach(item => {
+          if (item.year) yearsSet.add(item.year);
+        });
+
+        const sortedYears = Array.from(yearsSet).sort((a, b) => b - a);
+
+        timelineSelect.innerHTML = `<option value="all">📅 All Photos (${state.allMedia.length})</option>`;
+        sortedYears.forEach(year => {
+          const count = state.allMedia.filter(item => item.year === year).length;
+          const opt = document.createElement('option');
+          opt.value = year;
+          opt.textContent = `${year} (${count})`;
+          timelineSelect.appendChild(opt);
+        });
+      }
+
+      // ==========================================
+      // Lightbox / Fullscreen Viewer
+      // ==========================================
+      function openLightbox(list, index) {
+        if (!list || list.length === 0) return;
+        state.currentLightboxList = list;
+        state.currentLightboxIndex = index;
+        updateLightboxDisplay();
+        lightbox.classList.add('active');
+      }
+
+      async function updateLightboxDisplay() {
+        const item = state.currentLightboxList[state.currentLightboxIndex];
+        if (!item) return;
+
+        lbFilename.textContent = item.name;
+        lbIndex.textContent = `${state.currentLightboxIndex + 1} / ${state.currentLightboxList.length}`;
+        lbDate.textContent = item.dateFormatted || 'Unknown';
+        lbSize.textContent = formatBytes(item.size);
+
+        if (item.hasGps) {
+          lbCoords.textContent = `${item.latitude.toFixed(5)}, ${item.longitude.toFixed(5)}`;
+          lbBtnMaps.style.display = 'inline-flex';
+          lbBtnMaps.onclick = () => {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${item.latitude},${item.longitude}`, '_blank');
+          };
+        } else {
+          lbCoords.textContent = 'No GPS Metadata';
+          lbBtnMaps.style.display = 'none';
+        }
+
+        lbMediaContainer.innerHTML = `<div class="scan-spinner" style="width:40px;height:40px;"></div>`;
+
+        try {
+          const fileUrl = await getFileObjectUrl(item);
+          lbMediaContainer.innerHTML = '';
+
+          if (item.isVideo) {
+            const videoEl = document.createElement('video');
+            videoEl.className = 'lightbox-media';
+            videoEl.controls = true;
+            videoEl.autoplay = true;
+            videoEl.src = fileUrl;
+            lbMediaContainer.appendChild(videoEl);
+          } else {
+            const imgEl = document.createElement('img');
+            imgEl.className = 'lightbox-media';
+            imgEl.src = fileUrl;
+            imgEl.alt = item.name;
+            lbMediaContainer.appendChild(imgEl);
+          }
+        } catch (e) {
+          lbMediaContainer.innerHTML = `<div style="color:#ef4444;">Failed to load image</div>`;
+        }
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('active');
+        lbMediaContainer.innerHTML = '';
+      }
+
+      function lightboxPrev() {
+        if (state.currentLightboxIndex > 0) {
+          state.currentLightboxIndex--;
+        } else {
+          state.currentLightboxIndex = state.currentLightboxList.length - 1;
+        }
+        updateLightboxDisplay();
+      }
+
+      function lightboxNext() {
+        if (state.currentLightboxIndex < state.currentLightboxList.length - 1) {
+          state.currentLightboxIndex++;
+        } else {
+          state.currentLightboxIndex = 0;
+        }
+        updateLightboxDisplay();
+      }
+
+      // Keyboard navigation for lightbox
+      window.addEventListener('keydown', (e) => {
+        if (!lightbox.classList.contains('active')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') lightboxPrev();
+        if (e.key === 'ArrowRight') lightboxNext();
+      });
+
+      lbBtnClose.addEventListener('click', closeLightbox);
+      lbPrev.addEventListener('click', lightboxPrev);
+      lbNext.addEventListener('click', lightboxNext);
+      btnCloseTray.addEventListener('click', closeBottomTray);
+
+      // ==========================================
+      // JSON Cache File Read/Write Operations
+      // ==========================================
+      async function tryLoadIndexFromDirectory(dirHandle) {
+        try {
+          const fileHandle = await dirHandle.getFileHandle(CACHE_INDEX_FILENAME, { create: false });
+          const file = await fileHandle.getFile();
+          const text = await file.text();
+          const json = JSON.parse(text);
+          if (json && Array.isArray(json.items)) {
+            return json;
+          }
+        } catch (e) {
+          // File does not exist or read failed
+        }
+        return null;
+      }
+
+      async function saveIndexToDirectory(dirHandle, items, folderName) {
+        const payload = {
+          version: 1,
+          generator: 'PhotoMap',
+          folderName: folderName || dirHandle.name,
+          savedAt: new Date().toISOString(),
+          totalMedia: items.length,
+          totalGps: items.filter(i => i.hasGps).length,
+          items: items
+        };
+
+        // Save to IndexedDB mirror first
+        saveIndexToIndexedDB(payload.folderName, payload);
+
+        // Attempt to save photomap_index.json to directory
+        try {
+          let permission = await dirHandle.queryPermission({ mode: 'readwrite' });
+          if (permission !== 'granted') {
+            permission = await dirHandle.requestPermission({ mode: 'readwrite' });
+          }
+
+          if (permission === 'granted') {
+            const fileHandle = await dirHandle.getFileHandle(CACHE_INDEX_FILENAME, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify(payload, null, 2));
+            await writable.close();
+            showToast(`💾 Saved index to <code>${CACHE_INDEX_FILENAME}</code>`);
+            return true;
+          } else {
+            showToast(`⚡ Index saved to browser cache (IndexedDB)`);
+          }
+        } catch (e) {
+          console.warn('Could not write to disk, kept in IndexedDB:', e);
+          showToast(`⚡ Index cached in browser storage`);
+        }
+        return false;
+      }
+
+      function exportIndexJson() {
+        if (state.allMedia.length === 0) {
+          alert('No photos loaded to export.');
+          return;
+        }
+
+        const payload = {
+          version: 1,
+          generator: 'PhotoMap',
+          folderName: state.folderName || 'PhotoMap',
+          savedAt: new Date().toISOString(),
+          totalMedia: state.allMedia.length,
+          totalGps: state.mappedMedia.length,
+          items: state.allMedia
+        };
+
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${state.folderName || 'photomap'}_index.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(`📥 Exported ${state.allMedia.length} items to JSON`);
+      }
+
+      function importIndexJsonFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          try {
+            const json = JSON.parse(event.target.result);
+            if (json && Array.isArray(json.items)) {
+              applyLoadedIndex(json.items, json.folderName || file.name.replace('.json', ''), 'imported JSON file');
+            } else {
+              alert('Invalid PhotoMap JSON format.');
+            }
+          } catch (err) {
+            alert('Error parsing JSON file.');
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function applyLoadedIndex(items, folderName, sourceLabel) {
+        state.folderName = folderName;
+        state.allMedia = items;
+        state.mappedMedia = items.filter(i => i.hasGps);
+        state.filteredMedia = [...state.allMedia];
+
+        clearObjectUrlCache();
+
+        welcomeScreen.style.display = 'none';
+        scanningOverlay.classList.remove('active');
+        headerControls.style.display = 'flex';
+        mapFloatingBox.style.display = 'flex';
+
+        initMap();
+        updateTimelineDropdown();
+        applyFilters();
+
+        showToast(`⚡ Loaded <strong>${items.length.toLocaleString()}</strong> items (${state.mappedMedia.length.toLocaleString()} mapped) from ${sourceLabel}!`);
+      }
+
+      // ==========================================
+      // Directory Scanner & Cache Loader
+      // ==========================================
+      async function openFolder(forceRescan = false) {
+        try {
+          if (!('showDirectoryPicker' in window)) {
+            alert('Your browser does not support folder selection. Please open this file in Google Chrome or Microsoft Edge.');
+            return;
+          }
+
+          let dirHandle = state.rootHandle;
+          if (!dirHandle || !forceRescan) {
+            dirHandle = await window.showDirectoryPicker({
+              id: 'photomap-directory-picker',
+              mode: 'readwrite'
+            });
+            state.rootHandle = dirHandle;
+            state.folderName = dirHandle.name;
+          }
+
+          // 1. Check if photomap_index.json already exists in folder
+          if (!forceRescan) {
+            const diskIndex = await tryLoadIndexFromDirectory(dirHandle);
+            if (diskIndex) {
+              applyLoadedIndex(diskIndex.items, dirHandle.name, `<code>${CACHE_INDEX_FILENAME}</code>`);
+              return;
+            }
+
+            // 2. Check if IndexedDB has cached index for this directory
+            const dbIndex = await loadIndexFromIndexedDB(dirHandle.name);
+            if (dbIndex && Array.isArray(dbIndex.items)) {
+              applyLoadedIndex(dbIndex.items, dirHandle.name, 'browser cache');
+              return;
+            }
+          }
+
+          // 3. No cache or force rescan requested -> Perform Full Background Scan
+          await scanDirectory(dirHandle);
+
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            if (state.allMedia.length === 0) {
+              welcomeScreen.style.display = 'flex';
+            }
+            scanningOverlay.classList.remove('active');
+          } else {
+            console.error('Folder access error:', err);
+            alert('An error occurred while opening the folder: ' + err.message);
+            scanningOverlay.classList.remove('active');
+          }
+        }
+      }
+
+      async function scanDirectory(dirHandle) {
+        welcomeScreen.style.display = 'none';
+        scanningOverlay.classList.add('active');
+        btnFinishScanEarly.style.display = 'inline-flex';
+
+        state.allMedia = [];
+        state.mappedMedia = [];
+        state.filteredMedia = [];
+        state.fileHandlesMap.clear();
+        clearObjectUrlCache();
+
+        let totalFilesEncountered = 0;
+        let mediaCount = 0;
+        let gpsCount = 0;
+
+        async function traverse(handle, path = '') {
+          for await (const entry of handle.values()) {
+            if (entry.kind === 'file') {
+              totalFilesEncountered++;
+              if (totalFilesEncountered % 10 === 0) {
+                scanTotalFiles.textContent = totalFilesEncountered.toLocaleString();
+              }
+
+              if (entry.name === CACHE_INDEX_FILENAME) continue;
+
+              const ext = entry.name.split('.').pop().toLowerCase();
+              const isPhoto = PHOTO_EXTENSIONS.has(ext);
+              const isVideo = VIDEO_EXTENSIONS.has(ext);
+
+              if (isPhoto || isVideo) {
+                mediaCount++;
+                scanMediaCount.textContent = mediaCount.toLocaleString();
+                scanCurrentFile.textContent = `${path ? path + '/' : ''}${entry.name}`;
+
+                const itemId = `${path ? path + '/' : ''}${entry.name}`;
+                state.fileHandlesMap.set(itemId, entry);
+
+                try {
+                  const file = await entry.getFile();
+                  
+                  // Lightweight record (No file blob stored in long-lived state!)
+                  const mediaItem = {
+                    id: itemId,
+                    name: entry.name,
+                    path: path,
+                    size: file.size,
+                    isPhoto: isPhoto,
+                    isVideo: isVideo,
+                    hasGps: false,
+                    latitude: null,
+                    longitude: null,
+                    dateTaken: null,
+                    dateFormatted: null,
+                    year: null
+                  };
+
+                  // Parse EXIF metadata
+                  if (window.exifr && isPhoto) {
+                    try {
+                      const parsed = await exifr.parse(file, {
+                        gps: true,
+                        rev: true,
+                        pick: [
+                          'latitude',
+                          'longitude',
+                          'GPSLatitude',
+                          'GPSLongitude',
+                          'DateTimeOriginal',
+                          'CreateDate',
+                          'ModifyDate',
+                          'OffsetTime',
+                          'OffsetTimeOriginal'
+                        ]
+                      });
+
+                      if (parsed) {
+                        if (typeof parsed.latitude === 'number' && typeof parsed.longitude === 'number') {
+                          mediaItem.latitude = parsed.latitude;
+                          mediaItem.longitude = parsed.longitude;
+                          mediaItem.hasGps = true;
+                          gpsCount++;
+                          scanGpsCount.textContent = gpsCount.toLocaleString();
+                        }
+
+                        const dateCandidate = parsed.DateTimeOriginal || parsed.CreateDate || parsed.ModifyDate;
+                        if (dateCandidate instanceof Date && !isNaN(dateCandidate.getTime())) {
+                          mediaItem.dateTaken = dateCandidate.toISOString();
+                        }
+                      }
+                    } catch (e) {
+                      // Fallback on parse error
+                    }
+                  }
+
+                  // Fallback date from file
+                  if (!mediaItem.dateTaken && file.lastModified) {
+                    mediaItem.dateTaken = new Date(file.lastModified).toISOString();
+                  }
+
+                  if (mediaItem.dateTaken) {
+                    const parsedDate = new Date(mediaItem.dateTaken);
+                    mediaItem.dateFormatted = formatDate(parsedDate);
+                    mediaItem.year = parsedDate.getFullYear();
+                  }
+
+                  state.allMedia.push(mediaItem);
+                  if (mediaItem.hasGps) {
+                    state.mappedMedia.push(mediaItem);
+                  }
+
+                } catch (fileErr) {
+                  console.warn('Could not read file:', entry.name, fileErr);
+                }
+              }
+            } else if (entry.kind === 'directory') {
+              await traverse(entry, path ? `${path}/${entry.name}` : entry.name);
+            }
+          }
+        }
+
+        // Execute scan
+        await traverse(dirHandle);
+
+        // Save index to disk & IndexedDB
+        await saveIndexToDirectory(dirHandle, state.allMedia, dirHandle.name);
+
+        finishScanning();
+      }
+
+      function finishScanning() {
+        scanningOverlay.classList.remove('active');
+        welcomeScreen.style.display = 'none';
+        headerControls.style.display = 'flex';
+        mapFloatingBox.style.display = 'flex';
+
+        // Sort media chronologically descending
+        state.allMedia.sort((a, b) => {
+          const timeA = a.dateTaken ? new Date(a.dateTaken).getTime() : 0;
+          const timeB = b.dateTaken ? new Date(b.dateTaken).getTime() : 0;
+          return timeB - timeA;
+        });
+
+        initMap();
+        updateTimelineDropdown();
+        applyFilters();
+
+        showToast(`✨ Finished scan: <strong>${state.allMedia.length.toLocaleString()}</strong> items (${state.mappedMedia.length.toLocaleString()} mapped).`);
+
+        if (state.mappedMedia.length === 0 && state.allMedia.length > 0) {
+          alert(`Found ${state.allMedia.length} media files, but none contain GPS coordinates. You can browse them in the "All Photos" tab!`);
+          btnViewGrid.click();
+        }
+      }
+
+      // ==========================================
+      // Event Listeners & Navigation
+      // ==========================================
+      btnViewMap.addEventListener('click', () => {
+        state.activeView = 'map';
+        btnViewMap.classList.add('active');
+        btnViewGrid.classList.remove('active');
+        gridView.classList.remove('active');
+        mapView.style.display = 'block';
+        mapFloatingBox.style.display = 'flex';
+        if (map) map.invalidateSize();
+        renderMapMarkers();
+      });
+
+      btnViewGrid.addEventListener('click', () => {
+        state.activeView = 'grid';
+        btnViewGrid.classList.add('active');
+        btnViewMap.classList.remove('active');
+        gridView.classList.add('active');
+        closeBottomTray();
+        mapFloatingBox.style.display = 'none';
+        renderAllPhotosGrid(true);
+      });
+
+      timelineSelect.addEventListener('change', (e) => {
+        state.currentYearFilter = e.target.value;
+        applyFilters();
+      });
+
+      mediaTypeSelect.addEventListener('change', (e) => {
+        state.currentTypeFilter = e.target.value;
+        applyFilters();
+      });
+
+      btnToggleHeatmap.addEventListener('click', () => {
+        state.isHeatmapActive = !state.isHeatmapActive;
+        heatmapStatus.textContent = state.isHeatmapActive ? 'On' : 'Off';
+        btnToggleHeatmap.style.borderColor = state.isHeatmapActive ? 'var(--accent-secondary)' : 'var(--border-subtle)';
+        renderMapMarkers();
+      });
+
+      btnFitWorld.addEventListener('click', () => {
+        if (markerClusterGroup && map) {
+          const b = markerClusterGroup.getBounds();
+          if (b.isValid()) {
+            map.fitBounds(b, { padding: [50, 50] });
+          } else {
+            map.setView([25, 0], 2.5);
+          }
+        }
+      });
+
+      btnBrand.addEventListener('click', () => {
+        if (state.allMedia.length > 0) {
+          btnViewMap.click();
+        }
+      });
+
+      btnSelectFolder.addEventListener('click', () => openFolder(false));
+      btnChangeFolder.addEventListener('click', () => openFolder(false));
+      btnRescan.addEventListener('click', () => openFolder(true));
+
+      // Options dropdown toggles
+      btnMoreOptions.addEventListener('click', (e) => {
+        e.stopPropagation();
+        optionsDropdown.classList.toggle('show');
+      });
+
+      document.addEventListener('click', () => {
+        optionsDropdown.classList.remove('show');
+      });
+
+      menuExportJson.addEventListener('click', () => {
+        exportIndexJson();
+        optionsDropdown.classList.remove('show');
+      });
+
+      menuImportJson.addEventListener('click', () => {
+        hiddenJsonInput.click();
+        optionsDropdown.classList.remove('show');
+      });
+
+      menuChangeFolder.addEventListener('click', () => {
+        openFolder(false);
+        optionsDropdown.classList.remove('show');
+      });
+
+      hiddenJsonInput.addEventListener('change', importIndexJsonFile);
+
+      btnFinishScanEarly.addEventListener('click', () => {
+        finishScanning();
+      });
+
+    })();
+  </script>
+</body>
+</html>
